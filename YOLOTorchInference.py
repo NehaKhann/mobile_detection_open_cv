@@ -23,26 +23,14 @@ class Inference:
     
     self.model.to(self.device)
 
-    # RabbitMQ
-    self.connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='localhost',heartbeat = 0))
-    self.channel = self.connection.channel()
-    self.channel.exchange_declare(exchange='direct_logs', exchange_type='direct')
-    self.queue_name = "MobileQueue"
-    # result = self.channel.queue_declare(queue=queue_name, exclusive=False)
-    self.channel.queue_bind(exchange='direct_logs', queue=self.queue_name)
-    # RabbitMQ Consumer for Receiving Frames from trt mtcnn
-    self.channel.basic_consume(
-    queue=self.queue_name, on_message_callback=self.callback, auto_ack=True)
-    self.channel.start_consuming()
-  
-  def callback(self,ch, method, properties, body):
-    print("frame",body)
+
   def __call__(self):
     
     if self.captureMode in [0, 1] or filetype.is_video(self.captureMode):
       frames = 0
-      cap = cv2.VideoCapture(self.captureMode)
+      gst_str = ('v4l2src device=/dev/video{} ! image/jpeg, width={}, height={},framerate=30/1 ! jpegdec ! video/x-raw, framerate=30/1 ! videoconvert ! appsink ').format(0, 1920, 1080)
+      cap = cv2.VideoCapture(gst_str, cv2.CAP_GSTREAMER)
+
       assert cap.isOpened()
         
       while True:
@@ -104,9 +92,11 @@ class Inference:
         bgr = (0, 255, 0)
         cv2.rectangle(frame, (x1, y1), (x2, y2), bgr, 2)
         cv2.putText(frame, self.class_to_label(labels[i]) + " " + str(conf[0]), (x1, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)
+        print("Mobile")
 #         cv2.putText(frame, str(conf), (x1 + 5, y1), cv2.FONT_HERSHEY_SIMPLEX, 0.9, bgr, 2)
     
-    cv2.imshow('YOLOv5 Detection', frame)
+    print("Frame procedd")
+    #cv2.imshow('YOLOv5 Detection', frame)
     #cv2_imshow(frame)
     return frame
   
